@@ -40,7 +40,7 @@ npm run dev                  # http://localhost:3000
 
 ### 3. Vercel
 1. Importa el repositorio en [vercel.com](https://vercel.com).
-2. En **Environment Variables** agrega las cuatro variables de `.env.example` (con la URL real en `NEXT_PUBLIC_SITE_URL`).
+2. En **Environment Variables** agrega las variables de `.env.example`. La URL y la anon key como **Config**; la service_role y el token de Decolecta como **Secret**. Verifica en `/api/salud` que todas digan `true`.
 3. Despliega.
 
 ## Pruebas

@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { registrarXml, type ResultadoCarga } from "@/lib/registrar";
 import { esPeriodo } from "@/lib/periodo";
 import { liquidar } from "@/lib/calculos";
+import { rucValido } from "@/lib/ruc";
 import type { Cliente, Comprobante, Regimen } from "@/lib/types";
 
 const num = (v: FormDataEntryValue | null) => {
@@ -157,7 +158,7 @@ export async function crearCliente(_prev: ResultadoAlta | undefined, form: FormD
   const regimen = String(form.get("regimen")) as Regimen;
   const email = String(form.get("email") || "").trim().toLowerCase();
   const nombre = String(form.get("nombre") || "").trim();
-  if (!/^(10|15|17|20)\d{9}$/.test(ruc)) return { error: "El RUC debe tener 11 dígitos y empezar con 10, 15, 17 o 20." };
+  if (!rucValido(ruc)) return { error: "El RUC no es válido: revisa los 11 dígitos." };
   if (!razon) return { error: "Escribe la razón social." };
   if (!(regimen in TASA_DEFECTO)) return { error: "Elige el régimen tributario." };
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "El correo no es válido." };
