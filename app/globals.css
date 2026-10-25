@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+body { @apply bg-hoja text-tinta font-body antialiased; }
+h1, h2, h3 { @apply font-display; text-wrap: balance; }
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-linea bg-white px-3.5 py-2 text-sm font-semibold text-tinta transition hover:bg-hoja disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primario { @apply btn border-tinta bg-tinta text-hoja hover:bg-tinta/90; }
+  .btn-verde { @apply btn border-verde text-verde hover:bg-verde/10; }
+  .btn-sol { @apply btn border-[#B7791F] text-[#8A5A00] hover:bg-sol/15; }
+  .campo { @apply w-full rounded-lg border border-linea bg-white px-3 py-2 text-sm outline-none focus:border-verde focus:ring-2 focus:ring-verde/20; }
+  .etiqueta { @apply text-xs font-bold uppercase tracking-wider text-gris; }
+  .panel { @apply rounded-xl border border-linea bg-white p-4 sm:p-5; }
+  .num { font-variant-numeric: tabular-nums; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-verde; }
+}
