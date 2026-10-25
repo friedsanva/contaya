@@ -1,10 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
+import { supabaseUrl, supabaseAnonKey } from "@/lib/env";
 import { cookies } from "next/headers";
 
 /** Cliente de Supabase para Server Components, Server Actions y Route Handlers (usa la sesión del usuario). */
 export function supabaseServer() {
   const store = cookies();
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createServerClient(supabaseUrl(), supabaseAnonKey(), {
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {
