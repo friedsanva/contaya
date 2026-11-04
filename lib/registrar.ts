@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { leerUBL, clasificar, alertasDe, XmlInvalidoError } from "./ubl";
+import { normalizarSerieNumero } from "./sire/propuesta";
 import type { Cliente } from "./types";
 
 export interface ResultadoCarga {
@@ -25,7 +26,8 @@ export async function registrarXml(
   try {
     if (archivo.size > MAX_BYTES) return { archivo: nombre, ok: false, mensaje: "El archivo pesa más de 2 MB." };
     const xml = await archivo.text();
-    const c = leerUBL(xml);
+    const c0 = leerUBL(xml);
+    const c = { ...c0, serie_numero: normalizarSerieNumero(c0.serie_numero) };
     const k = clasificar(c, cliente.ruc);
     const alertas = alertasDe(c, k.tipo, periodo);
 
@@ -46,6 +48,7 @@ export async function registrarXml(
       igv: c.igv,
       total: c.total,
       alertas,
+      semaforo: alertas.length ? "ambar" : "verde",
       archivo_path: ruta,
       origen: "xml",
       subido_por: usuarioId,

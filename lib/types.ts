@@ -42,7 +42,10 @@ export interface Comprobante {
   alertas: string[];
   observacion: string | null;
   archivo_path: string | null;
-  origen: "xml" | "manual";
+  origen: "xml" | "manual" | "sire";
+  semaforo: "verde" | "ambar" | "rojo";
+  en_sire: boolean;
+  car_sunat: string | null;
   created_at: string;
 }
 

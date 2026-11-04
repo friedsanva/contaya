@@ -56,7 +56,7 @@ export async function validarSinAlertas(form: FormData) {
   if (!esPeriodo(periodo)) return;
   await supabase.from("comprobantes")
     .update({ estado: "validado", validado_por: user.id, validado_at: new Date().toISOString() })
-    .eq("cliente_id", clienteId).eq("periodo", periodo).eq("tipo", tipo).eq("estado", "recibido").eq("alertas", "{}");
+    .eq("cliente_id", clienteId).eq("periodo", periodo).eq("tipo", tipo).eq("estado", "recibido").eq("alertas", "{}").neq("semaforo", "rojo");
   revalidatePath("/contador", "layout");
 }
 

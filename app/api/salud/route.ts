@@ -12,5 +12,6 @@ export function GET() {
     SUPABASE_URL: hay(`${pub}SUPABASE_URL`) || hay("SUPABASE_URL"),
     SUPABASE_ANON_KEY: hay(`${pub}SUPABASE_ANON_KEY`) || hay("SUPABASE_ANON_KEY"),
     SUPABASE_SERVICE_ROLE_KEY: hay("SUPABASE_SERVICE_ROLE_KEY"),
+    CRYPTO_KEY: hay("CONTAYA_CRYPTO_KEY"),
   });
 }

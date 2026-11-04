@@ -10,11 +10,14 @@ Oficina contable virtual para MYPEs del Perú (IPCOM Technologies Perú). Dueño
 - `SUPABASE_SERVICE_ROLE_KEY` solo en servidor (`lib/supabase/admin.ts`) y solo tras `exigirContador()`.
 - Solo cuentan para el cierre los comprobantes **validados**. Notas de crédito restan. Moneda extranjera necesita tipo de cambio.
 - La plataforma prepara y cuadra; la presentación en SUNAT (Formulario 621, Renta anual) la hace el contador con su Clave SOL.
+- **El modelo de proceso oficial está en `docs/proceso-mensual.md`. Léelo antes de cambiar el flujo.**
+- Compras y ventas vienen del **SIRE** (propuestas RCE y RVIE). El cliente solo sube ventas/NC/guías cuando se le pide.
+- Objetivo: el contador solo ve excepciones (semáforo). "Cero errores silenciosos": toda diferencia se muestra.
+- Credenciales SUNAT: siempre cifradas (`lib/cripto.ts`, llave `CONTAYA_CRYPTO_KEY`), nunca devueltas al navegador, cada uso en `bitacora`. Solo APIs oficiales de SUNAT; nunca automatizar el portal SOL.
+- La IA explica; nunca calcula impuestos.
 
 ## Comandos
 `npm test` · `npm run typecheck` · `npm run build` · `npm run dev`
 
 ## Hoja de ruta
-- Fase 1 (hecha): portal cliente, bandeja, cierre IGV, alta de clientes, exportar CSV.
-- Fase 2: acumulado anual Renta, consulta RUC no habido, notificaciones, agentes de atención al cliente, número de WhatsApp propio.
-- Fase 3: planillas y PLAME.
+Ver la tabla de fases en `docs/proceso-mensual.md`.

@@ -62,7 +62,8 @@ export default async function PortalCliente({ searchParams }: { searchParams: { 
         )}
 
         <section className="panel space-y-3">
-          <h2 className="text-lg font-bold">Subir comprobantes</h2>
+          <h2 className="text-lg font-bold">Subir ventas o notas de crédito</h2>
+          <p className="text-sm text-gris">Tus <b>compras ya no necesitas enviarlas</b>: las tomamos directamente de SUNAT. Sube aquí tus ventas o algún comprobante que tu contador te pida.</p>
           <SubirXml accion={subirXmlCliente} periodo={periodo} />
           <p className="text-xs text-gris">Descarga el XML desde tu sistema de facturación o desde SUNAT Operaciones en Línea. El sistema detecta solo si es compra o venta.</p>
         </section>

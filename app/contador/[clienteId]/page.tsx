@@ -4,7 +4,7 @@ import { exigirContador } from "@/lib/sesion";
 import { Encabezado } from "@/components/Encabezado";
 import { SelectorPeriodo } from "@/components/SelectorPeriodo";
 import { SubirXml } from "@/components/SubirXml";
-import { ChipEstado } from "@/components/Chip";
+import { Chip, ChipEstado } from "@/components/Chip";
 import { esPeriodo, periodoActual, periodoTexto } from "@/lib/periodo";
 import { soles, fechaCorta } from "@/lib/format";
 import { REGIMEN_TXT, TIPO_DOC_TXT, type Cliente, type Comprobante } from "@/lib/types";
@@ -13,6 +13,7 @@ import { validar, revertir, observar, fijarTipoCambio, validarSinAlertas, elimin
 export const dynamic = "force-dynamic";
 
 const ORDEN = { recibido: 0, observado: 1, validado: 2 } as const;
+const SEM = { rojo: 0, ambar: 1, verde: 2 } as const;
 
 export default async function Bandeja({ params, searchParams }: { params: { clienteId: string }; searchParams: { periodo?: string; tipo?: string } }) {
   const { supabase, perfil } = await exigirContador();
@@ -24,10 +25,12 @@ export default async function Bandeja({ params, searchParams }: { params: { clie
   const { data: docs } = await supabase.from("comprobantes").select("*").eq("cliente_id", cliente.id).eq("periodo", periodo).returns<Comprobante[]>();
   const todos = docs ?? [];
   const lista = todos.filter((d) => d.tipo === tipo).sort((a, b) =>
-    ORDEN[a.estado] - ORDEN[b.estado] || (b.alertas.length ? 1 : 0) - (a.alertas.length ? 1 : 0) || a.fecha_emision.localeCompare(b.fecha_emision));
+    ORDEN[a.estado] - ORDEN[b.estado] || (SEM[a.semaforo] ?? 1) - (SEM[b.semaforo] ?? 1) || a.fecha_emision.localeCompare(b.fecha_emision));
   const nV = todos.filter((d) => d.tipo === "venta").length;
   const nC = todos.length - nV;
   const limpios = lista.filter((d) => d.estado === "recibido" && d.alertas.length === 0).length;
+  const excepciones = todos.filter((d) => d.estado !== "validado").length;
+  const autoValidados = todos.filter((d) => d.origen === "sire" && d.estado === "validado").length;
   const q = (t: string) => `?periodo=${periodo}&tipo=${t}`;
 
   return (
@@ -42,8 +45,15 @@ export default async function Bandeja({ params, searchParams }: { params: { clie
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <SelectorPeriodo periodo={periodo} />
+            <Link className="btn" href={`/contador/${cliente.id}/sire?periodo=${periodo}`}>SIRE</Link>
             <Link className="btn-primario" href={`/contador/${cliente.id}/cierre?periodo=${periodo}`}>Cierre del mes →</Link>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="panel"><p className="etiqueta">Para revisar</p><p className="num font-display text-3xl font-bold text-[#8A5A00]">{excepciones}</p></div>
+          <div className="panel"><p className="etiqueta">Validados solos (SIRE)</p><p className="num font-display text-3xl font-bold text-verde">{autoValidados}</p></div>
+          <div className="panel col-span-2 md:col-span-1"><p className="etiqueta">Total del periodo</p><p className="num font-display text-3xl font-bold">{todos.length}</p></div>
         </div>
 
         <section className="panel space-y-4">
@@ -79,10 +89,14 @@ export default async function Bandeja({ params, searchParams }: { params: { clie
                     <p className="num font-semibold">{d.moneda === "PEN" ? soles(d.total) : `${d.moneda} ${Number(d.total).toFixed(2)}`}</p>
                     <p className="num text-xs text-gris">Base {Number(d.base_gravada).toFixed(2)} · IGV {Number(d.igv).toFixed(2)}{d.no_gravado ? ` · No grav. ${Number(d.no_gravado).toFixed(2)}` : ""}</p>
                   </div>
-                  {d.alertas.map((a) => <p key={a} className="text-xs font-semibold text-[#A3261E] sm:col-span-2">⚠ {a}</p>)}
+                  {d.alertas.map((a) => a.startsWith("ℹ")
+                    ? <p key={a} className="text-xs text-gris sm:col-span-2">{a}</p>
+                    : <p key={a} className={`text-xs font-semibold sm:col-span-2 ${d.semaforo === "rojo" ? "text-[#A3261E]" : "text-[#8A5A00]"}`}>⚠ {a}</p>)}
                   {d.observacion && d.estado === "observado" && <p className="text-xs text-[#8A5A00] sm:col-span-2">Observación enviada: {d.observacion}</p>}
                   <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
                     <ChipEstado estado={d.estado} />
+                    {d.origen === "sire" ? <Chip tono="info">SIRE</Chip> : d.en_sire ? <Chip tono="info">XML · en SIRE</Chip> : <Chip tono="neutro">XML</Chip>}
+                    {d.estado !== "validado" && <Chip tono={d.semaforo === "rojo" ? "error" : d.semaforo === "ambar" ? "alerta" : "ok"}>{d.semaforo === "rojo" ? "Rojo" : d.semaforo === "ambar" ? "Ámbar" : "Verde"}</Chip>}
                     {d.moneda !== "PEN" && (
                       <form action={fijarTipoCambio} className="flex items-center gap-1">
                         <input type="hidden" name="id" value={d.id} />

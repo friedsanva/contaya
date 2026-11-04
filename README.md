@@ -43,6 +43,11 @@ npm run dev                  # http://localhost:3000
 2. En **Environment Variables** agrega las variables de `.env.example`. La URL y la anon key como **Config**; la service_role y el token de Decolecta como **Secret**. Verifica en `/api/salud` que todas digan `true`.
 3. Despliega.
 
+## Fase 2A · SIRE
+1. En Supabase → SQL Editor ejecuta `supabase/migrations/0002_sire.sql`.
+2. En Vercel agrega `CONTAYA_CRYPTO_KEY` (Secret) y haz Redeploy. `/api/salud` debe mostrar `CRYPTO_KEY: true`.
+3. En la bandeja de cada cliente usa el botón **SIRE**: sube la propuesta exportada o registra sus credenciales para descargarla de SUNAT.
+
 ## Pruebas
 ```bash
 npm test          # lector de XML y cálculos tributarios
