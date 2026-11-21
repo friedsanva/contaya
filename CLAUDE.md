@@ -20,4 +20,4 @@ Oficina contable virtual para MYPEs del Perú (IPCOM Technologies Perú). Dueño
 `npm test` · `npm run typecheck` · `npm run build` · `npm run dev`
 
 ## Hoja de ruta
-Ver la tabla de fases en `docs/proceso-mensual.md`.
+Ver la tabla de fases en `docs/proceso-mensual.md` y el plan día a día en `docs/cronograma.md` (tarea diaria de Claude: un PR por día; Fried aprueba con Merge).
