@@ -29,7 +29,7 @@ Meta: llevar con Contaya el **periodo noviembre 2026 de 3 clientes piloto** y de
 | Fecha | Tarea | Quién | Estado |
 |---|---|---|---|
 | Sáb 21/11 | Automatización: revisión automática de PR, migraciones automáticas, llave de cifrado como frase, este cronograma | Claude | en PR |
-| Lun 23/11 | **2B-1** Validez de cada comprobante en el semáforo (servicio oficial "Consulta integrada de comprobantes de pago" de SUNAT, con las mismas credenciales de API; si no hay credenciales, el semáforo lo indica) | Claude | pendiente |
+| Lun 23/11 | **2B-1** Validez de cada comprobante en el semáforo (servicio oficial "Consulta integrada de comprobantes de pago" de SUNAT, con las mismas credenciales de API; si no hay credenciales, el semáforo lo indica) | Claude | en PR #2 |
 | Lun 23/11 | F4 · Primera prueba real con archivo SIRE de IPCOM | Fried | pendiente |
 | Mar 24/11 | **2B-2** RUC activo y habido de cada proveedor (Decolecta/OpenRUC) con caché de 7 días; proveedor no habido = rojo | Claude | pendiente |
 | Mié 25/11 | **2C-1** IGV proyectado del mes en el portal del cliente (tarjeta clara: "Este mes pagarías aprox. S/ X") | Claude | pendiente |

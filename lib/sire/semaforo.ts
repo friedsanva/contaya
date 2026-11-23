@@ -1,4 +1,5 @@
 import type { FilaSire, Registro } from "./propuesta";
+import { evaluarValidez, type ValidezSunat } from "../sunat/validez";
 
 export type Semaforo = "verde" | "ambar" | "rojo";
 
@@ -11,10 +12,11 @@ export interface ContextoSemaforo {
   periodo: string;                     // YYYY-MM
   duplicadas: Set<string>;             // claves repetidas dentro del mismo archivo
   xmlDelCliente?: { total: number } | null; // si el cliente subió el XML de este comprobante
+  validez?: ValidezSunat | null;       // respuesta guardada de la consulta de validez SUNAT (si ya se hizo)
 }
 
 const ORDEN: Record<Semaforo, number> = { verde: 0, ambar: 1, rojo: 2 };
-const peor = (a: Semaforo, b: Semaforo) => (ORDEN[b] > ORDEN[a] ? b : a);
+export const peor = (a: Semaforo, b: Semaforo) => (ORDEN[b] > ORDEN[a] ? b : a);
 
 export const claveFila = (f: Pick<FilaSire, "tipo_doc" | "contraparte_doc" | "serie_numero">) =>
   `${f.tipo_doc}|${f.contraparte_doc}|${f.serie_numero}`;
@@ -56,6 +58,11 @@ export function evaluar(f: FilaSire, registro: Registro, ctx: ContextoSemaforo):
 
   if (ctx.xmlDelCliente && Math.abs(ctx.xmlDelCliente.total - f.total) > 0.05) {
     marcar("ambar", `El XML del cliente (${ctx.xmlDelCliente.total.toFixed(2)}) no coincide con SUNAT (${f.total.toFixed(2)})`);
+  }
+  if (ctx.validez) {
+    const v = evaluarValidez(ctx.validez, registro === "ventas" ? "venta" : "compra");
+    s = peor(s, v.semaforo);
+    a.push(...v.alertas);
   }
   return { semaforo: s, alertas: a };
 }

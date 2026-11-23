@@ -8,7 +8,7 @@ import { esPeriodo, periodoActual, periodoTexto } from "@/lib/periodo";
 import { soles } from "@/lib/format";
 import { hayLlave } from "@/lib/cripto";
 import type { Cliente } from "@/lib/types";
-import { FormArchivoSire, FormSunat, FormCredenciales } from "./forms";
+import { FormArchivoSire, FormSunat, FormCredenciales, FormValidez } from "./forms";
 import { revocarCredenciales } from "../../sire-actions";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +22,16 @@ export default async function Sire({ params, searchParams }: { params: { cliente
   const periodo = esPeriodo(searchParams.periodo) ? searchParams.periodo : periodoActual();
   const { data: cliente } = await supabase.from("clientes").select("*").eq("id", params.clienteId).maybeSingle<Cliente>();
   if (!cliente) notFound();
-  const [{ data: cred }, { data: hist }] = await Promise.all([
+  const [{ data: cred }, { data: hist }, { data: val }] = await Promise.all([
     supabase.from("estado_credenciales_sire").select("*").eq("cliente_id", cliente.id).maybeSingle<EstadoCred>(),
     supabase.from("importaciones_sire").select("*").eq("cliente_id", cliente.id).eq("periodo", periodo).order("created_at", { ascending: false }).limit(10).returns<Importacion[]>(),
+    supabase.from("comprobantes").select("semaforo,validez_at,validez_motivo,validez_sunat").eq("cliente_id", cliente.id).eq("periodo", periodo)
+      .returns<{ semaforo: string; validez_at: string | null; validez_motivo: string | null; validez_sunat: unknown }[]>(),
   ]);
+  const comps = val ?? [];
+  const sinVerificar = comps.filter((c) => !c.validez_at).length;
+  const verificados = comps.filter((c) => c.validez_sunat).length;
+  const noConsultables = comps.filter((c) => c.validez_at && !c.validez_sunat).length;
   const fechaHora = (s: string) => new Date(s).toLocaleString("es-PE", { timeZone: "America/Lima", dateStyle: "short", timeStyle: "short" });
 
   return (
@@ -69,6 +75,23 @@ export default async function Sire({ params, searchParams }: { params: { cliente
             <FormArchivoSire clienteId={cliente.id} periodo={periodo} />
           </section>
         </div>
+
+        <section className="panel space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">Validez de comprobantes en SUNAT</h2>
+            {comps.length === 0 ? <Chip tono="neutro">Sin comprobantes</Chip>
+              : sinVerificar === 0 ? <Chip tono="ok">Todo verificado</Chip>
+              : <Chip tono="alerta">{sinVerificar} sin verificar</Chip>}
+          </div>
+          <p className="text-sm text-gris">
+            Contaya pregunta a SUNAT (Consulta integrada de comprobantes de pago) si cada comprobante existe y no está anulado,
+            y si el proveedor está activo y habido. Lo anulado, inexistente o de un proveedor no habido pasa a <b>rojo</b>.
+          </p>
+          {comps.length > 0 && <p className="text-sm"><b>{verificados}</b> verificados · <b>{sinVerificar}</b> sin verificar{noConsultables ? <> · <b>{noConsultables}</b> no consultables (tipo de comprobante fuera del servicio)</> : null}</p>}
+          {cred ? (sinVerificar > 0 && <FormValidez clienteId={cliente.id} periodo={periodo} />) : comps.length > 0 && (
+            <p className="text-sm font-semibold text-[#8A5A00]">⚠ Sin credenciales de API, la validez no se verifica: el semáforo de este periodo no incluye este control. Registra las credenciales abajo.</p>
+          )}
+        </section>
 
         <section className="panel space-y-3">
           <h2 className="text-lg font-bold">Importaciones de {periodoTexto(periodo)}</h2>
