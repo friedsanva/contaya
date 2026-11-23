@@ -41,7 +41,7 @@ export async function importarPropuesta(
     if (vistos.has(clave)) continue; // el repetido ya quedó en rojo en su primera aparición
     vistos.add(clave);
     const previo = porClave.get(clave);
-    const ev = evaluar(f, registro, { periodo, duplicadas: dup, xmlDelCliente: previo && previo.origen !== "sire" ? { total: Number(previo.total) } : null });
+    const ev = evaluar(f, registro, { periodo, duplicadas: dup, xmlDelCliente: previo && previo.origen !== "sire" ? { total: Number(previo.total) } : null, validez: previo?.validez_sunat ?? null });
     if (ev.semaforo === "verde") r.verdes++; else if (ev.semaforo === "ambar") r.ambar++; else r.rojos++;
 
     const datosFila = {

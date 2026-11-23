@@ -80,7 +80,7 @@ Explica y acompaña; **nunca calcula impuestos**. Los montos salen de reglas fij
 |---|---|---|
 | 1 | Portal, bandeja, cierre IGV, alta de clientes, RUC automático | Hecha |
 | 2A | Importar propuestas SIRE (archivo y API) + credenciales cifradas + semáforo básico | En curso |
-| 2B | Validez de CPE y RUC habido de proveedores en el semáforo | Pendiente |
+| 2B | Validez de CPE y RUC habido de proveedores en el semáforo | En curso (2B-1 validez de CPE: `lib/sunat/validez.ts`) |
 | 2C | IGV proyectado, aviso día 20, calendario de vencimientos | Pendiente |
 | 2D | Asistente IA (web y WhatsApp) | Pendiente |
 | 3 | Guías de remisión, conexión a sistemas de facturación, planillas | Pendiente |

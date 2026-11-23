@@ -1,6 +1,6 @@
 "use client";
 import { useFormState, useFormStatus } from "react-dom";
-import { importarArchivoSire, importarDesdeSunat, guardarCredenciales, type ResultadoSire } from "../../sire-actions";
+import { importarArchivoSire, importarDesdeSunat, guardarCredenciales, verificarValidez, type ResultadoSire } from "../../sire-actions";
 
 function Boton({ texto, enviando, clase = "btn-primario" }: { texto: string; enviando: string; clase?: string }) {
   const { pending } = useFormStatus();
@@ -19,6 +19,18 @@ export function FormSunat({ clienteId, periodo }: { clienteId: string; periodo: 
       <input type="hidden" name="cliente_id" value={clienteId} />
       <input type="hidden" name="periodo" value={periodo} />
       <Boton texto="Descargar ventas y compras de SUNAT" enviando="Conectando con SUNAT… (puede tardar hasta 1 minuto)" />
+      <Resultado r={r} />
+    </form>
+  );
+}
+
+export function FormValidez({ clienteId, periodo }: { clienteId: string; periodo: string }) {
+  const [r, accion] = useFormState(verificarValidez, undefined);
+  return (
+    <form action={accion} className="space-y-2">
+      <input type="hidden" name="cliente_id" value={clienteId} />
+      <input type="hidden" name="periodo" value={periodo} />
+      <Boton texto="Verificar validez en SUNAT" enviando="Consultando a SUNAT… (hasta 1 minuto)" clase="btn" />
       <Resultado r={r} />
     </form>
   );

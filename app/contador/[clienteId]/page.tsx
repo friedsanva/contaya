@@ -31,6 +31,7 @@ export default async function Bandeja({ params, searchParams }: { params: { clie
   const limpios = lista.filter((d) => d.estado === "recibido" && d.alertas.length === 0).length;
   const excepciones = todos.filter((d) => d.estado !== "validado").length;
   const autoValidados = todos.filter((d) => d.origen === "sire" && d.estado === "validado").length;
+  const sinValidez = todos.filter((d) => !d.validez_at).length;
   const q = (t: string) => `?periodo=${periodo}&tipo=${t}`;
 
   return (
@@ -49,6 +50,13 @@ export default async function Bandeja({ params, searchParams }: { params: { clie
             <Link className="btn-primario" href={`/contador/${cliente.id}/cierre?periodo=${periodo}`}>Cierre del mes →</Link>
           </div>
         </div>
+
+        {sinValidez > 0 && (
+          <p className="panel text-sm font-semibold text-[#8A5A00]">
+            ⚠ {sinValidez} {sinValidez === 1 ? "comprobante aún no tiene" : "comprobantes aún no tienen"} verificada su validez en SUNAT.{" "}
+            <Link className="underline" href={`/contador/${cliente.id}/sire?periodo=${periodo}`}>Verificar en SIRE →</Link>
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <div className="panel"><p className="etiqueta">Para revisar</p><p className="num font-display text-3xl font-bold text-[#8A5A00]">{excepciones}</p></div>

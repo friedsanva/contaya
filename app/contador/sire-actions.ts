@@ -7,6 +7,7 @@ import { esPeriodo } from "@/lib/periodo";
 import { importarPropuesta, type ResumenImportacion } from "@/lib/sire/importar";
 import { descargarPropuesta, SireError, type CredencialesSire } from "@/lib/sire/api";
 import { PropuestaInvalidaError, type Registro } from "@/lib/sire/propuesta";
+import { verificarPeriodo, mensajeValidez } from "@/lib/sunat/verificar";
 
 export interface ResultadoSire { ok: boolean; mensaje: string; resumen?: Partial<Record<Registro, ResumenImportacion>> }
 
@@ -61,20 +62,10 @@ export async function importarDesdeSunat(_prev: ResultadoSire | undefined, form:
   if (!esPeriodo(periodo)) return { ok: false, mensaje: "Periodo no válido." };
 
   const admin = supabaseAdmin();
-  const [{ data: cliente }, { data: cred }] = await Promise.all([
-    supabase.from("clientes").select("ruc").eq("id", clienteId).single(),
-    admin.from("credenciales_sire").select("*").eq("cliente_id", clienteId).maybeSingle(),
-  ]);
-  if (!cliente) return { ok: false, mensaje: "Cliente no encontrado." };
-  if (!cred) return { ok: false, mensaje: "Este cliente aún no tiene credenciales SUNAT registradas." };
-
-  let credenciales: CredencialesSire;
-  try {
-    const s = JSON.parse(descifrar(cred.secretos_cifrados));
-    credenciales = { ruc: cliente.ruc, usuario_sol: cred.usuario_sol, client_id: cred.client_id, client_secret: s.client_secret, clave_sol: s.clave_sol };
-  } catch {
-    return { ok: false, mensaje: "No se pudieron leer las credenciales guardadas. Vuelve a registrarlas." };
-  }
+  const leidas = await leerCredenciales(supabase, clienteId);
+  if ("mensaje" in leidas) return { ok: false, mensaje: leidas.mensaje };
+  const { credenciales, cliente } = leidas;
+  const inicio = Date.now();
 
   const resumen: Partial<Record<Registro, ResumenImportacion>> = {};
   const mensajes: string[] = [];
@@ -94,10 +85,53 @@ export async function importarDesdeSunat(_prev: ResultadoSire | undefined, form:
     }
   }
   const huboError = Object.keys(resumen).length < 2;
-  await admin.from("credenciales_sire").update({ ultimo_uso: new Date().toISOString(), ultimo_error: huboError ? mensajes.join(" | ").slice(0, 500) : null }).eq("cliente_id", clienteId);
-  await supabase.from("bitacora").insert({ cliente_id: clienteId, usuario_id: user.id, accion: "usar_credenciales_sunat", detalle: { periodo, ok: !huboError } });
+  // Con el tiempo que quede, se verifica la validez de cada comprobante (Consulta Integrada de CPE).
+  const restante = 50000 - (Date.now() - inicio);
+  let validez = null;
+  if (restante > 8000) {
+    validez = await verificarPeriodo(supabase, cliente, periodo, credenciales, { maxMs: restante - 5000 });
+    mensajes.push(mensajeValidez(validez));
+  } else {
+    mensajes.push("Validez SUNAT: sin tiempo en esta descarga. Presiona \"Verificar validez en SUNAT\".");
+  }
+  await admin.from("credenciales_sire").update({ ultimo_uso: new Date().toISOString(), ultimo_error: huboError ? mensajes.join(" | ").slice(0, 500) : (validez?.error ?? null) }).eq("cliente_id", clienteId);
+  await supabase.from("bitacora").insert({ cliente_id: clienteId, usuario_id: user.id, accion: "usar_credenciales_sunat", detalle: { periodo, ok: !huboError, validez } });
   revalidatePath(`/contador/${clienteId}`, "layout");
   return { ok: !huboError, mensaje: mensajes.join("\n"), resumen };
+}
+
+/** Consulta en SUNAT la validez de los comprobantes del periodo que aún no se verificaron. */
+export async function verificarValidez(_prev: ResultadoSire | undefined, form: FormData): Promise<ResultadoSire> {
+  const { supabase, user } = await exigirContador();
+  const clienteId = texto(form.get("cliente_id"));
+  const periodo = texto(form.get("periodo"));
+  if (!esPeriodo(periodo)) return { ok: false, mensaje: "Periodo no válido." };
+  const leidas = await leerCredenciales(supabase, clienteId);
+  if ("mensaje" in leidas) return { ok: false, mensaje: leidas.mensaje };
+  const r = await verificarPeriodo(supabase, leidas.cliente, periodo, leidas.credenciales, { maxMs: 45000 });
+  await supabaseAdmin().from("credenciales_sire").update({ ultimo_uso: new Date().toISOString(), ultimo_error: r.error }).eq("cliente_id", clienteId);
+  await supabase.from("bitacora").insert({ cliente_id: clienteId, usuario_id: user.id, accion: "usar_credenciales_sunat", detalle: { periodo, uso: "validez_cpe", ...r } });
+  revalidatePath(`/contador/${clienteId}`, "layout");
+  const nada = r.revisados + r.noConsultables + r.pendientes === 0;
+  return { ok: !r.error, mensaje: nada ? "Todos los comprobantes del periodo ya estaban verificados." : mensajeValidez(r) };
+}
+
+/** Descifra (solo en el servidor) las credenciales del cliente. Nunca salen al navegador. */
+async function leerCredenciales(
+  supabase: Awaited<ReturnType<typeof exigirContador>>["supabase"], clienteId: string,
+): Promise<{ credenciales: CredencialesSire; cliente: { id: string; ruc: string } } | { mensaje: string }> {
+  const [{ data: cliente }, { data: cred }] = await Promise.all([
+    supabase.from("clientes").select("id,ruc").eq("id", clienteId).single(),
+    supabaseAdmin().from("credenciales_sire").select("*").eq("cliente_id", clienteId).maybeSingle(),
+  ]);
+  if (!cliente) return { mensaje: "Cliente no encontrado." };
+  if (!cred) return { mensaje: "Este cliente aún no tiene credenciales SUNAT registradas." };
+  try {
+    const s = JSON.parse(descifrar(cred.secretos_cifrados));
+    return { cliente, credenciales: { ruc: cliente.ruc, usuario_sol: cred.usuario_sol, client_id: cred.client_id, client_secret: s.client_secret, clave_sol: s.clave_sol } };
+  } catch {
+    return { mensaje: "No se pudieron leer las credenciales guardadas. Vuelve a registrarlas." };
+  }
 }
 
 /** Guarda (o reemplaza) las credenciales del cliente, cifradas. Nunca se devuelven al navegador. */

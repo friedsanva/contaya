@@ -46,6 +46,9 @@ export interface Comprobante {
   semaforo: "verde" | "ambar" | "rojo";
   en_sire: boolean;
   car_sunat: string | null;
+  validez_sunat: import("./sunat/validez").ValidezSunat | null;
+  validez_at: string | null;
+  validez_motivo: string | null;
   created_at: string;
 }
 
